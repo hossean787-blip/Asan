@@ -1,6 +1,12 @@
-name: Android internal Release APK (temporary test signature)
+name: Asan Android internal Release APK (temporary test signature)
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android-wrapper/**'
+      - '.github/workflows/build-internal-release.yml'
+      - 'tests/**'
   push:
     branches: [main]
     paths:
@@ -55,11 +61,14 @@ jobs:
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           sha256sum "$APK" > "$APK.sha256"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep "^package:"
+          echo "### Asan APK — internal release" >> "$GITHUB_STEP_SUMMARY"
+          echo "Built from commit $GITHUB_SHA; signing certificate is temporary." >> "$GITHUB_STEP_SUMMARY"
           rm -f "$KEYSTORE"
       - name: Upload internal testing APK (not production-signed)
         uses: actions/upload-artifact@v4
         with:
-          name: Miz-Mosahebe-2.1.2-INTERNAL-RELEASE-APK
+          name: Asan-2.1.2-INTERNAL-RELEASE-APK
           path: |
             android-wrapper/app/build/outputs/apk/release/app-release.apk
             android-wrapper/app/build/outputs/apk/release/app-release.apk.sha256
