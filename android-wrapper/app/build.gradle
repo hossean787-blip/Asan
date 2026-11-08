@@ -7,8 +7,8 @@ android {
         applicationId 'ir.mizmosahabe.accounting'
         minSdk 24
         targetSdk 35
-        versionCode 7
-        versionName '2.1.4-beta'
+        versionCode 8
+        versionName '2.1.5-beta'
     }
     signingConfigs {
         release {
