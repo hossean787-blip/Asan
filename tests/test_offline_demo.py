@@ -19,6 +19,6 @@ class OfflineDemoTests(unittest.TestCase):
         self.assertNotIn('fetch(',HTML)
         self.assertNotIn('XMLHttpRequest',HTML)
     def test_candidate_and_employer_flow(self):
-        for t in ['#50C787','آسان','آزمون آزمایشی','بانک سؤالات نمونه عمومی','data-act="server"','data-act="admin"','function personalPage()','function examPage()','function detailPage(r)','DEFAULT_MINUTES=90','const N=100']:
+        for t in ['#50C787','آسان','آزمون آزمایشی','بانک سؤالات نمونه عمومی','data-act="server"','data-act="admin"','function personalPage()','function examPage()','function detailPage(r)','DEFAULT_MINUTES=20','const N=100']:
             self.assertIn(t,HTML)
 if __name__=='__main__':unittest.main()
