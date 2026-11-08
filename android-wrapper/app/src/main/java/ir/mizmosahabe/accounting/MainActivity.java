@@ -372,7 +372,33 @@ public final class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    private boolean demoWasBackgrounded = false;
+    @Override protected void onPause() {
+        if (demoMode && web != null) {
+            demoWasBackgrounded = true;
+            // Finalize a live candidate exam before Android backgrounds this Activity.
+            web.evaluateJavascript("window.asanOnBackground && window.asanOnBackground();", null);
+        }
+        super.onPause();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (demoWasBackgrounded && demoMode && web != null) {
+            demoWasBackgrounded = false;
+            // Recovery in case the WebView was suspended before onPause JS ran.
+            web.evaluateJavascript("window.asanOnBackground && window.asanOnBackground();", null);
+        }
+    }
+
     @Override public void onBackPressed() {
+        if (demoMode && web != null) {
+            web.evaluateJavascript(
+                "window.asanOnBackground ? window.asanOnBackground() : false",
+                result -> finish()
+            );
+            return;
+        }
         if (web != null && !demoMode && web.canGoBack()) web.goBack();
         else if (web != null && !demoMode) showDemo();
         else super.onBackPressed();
