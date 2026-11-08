@@ -31,7 +31,7 @@ class CandidateFlowTests(unittest.TestCase):
         self.assertIn('function startExam(',HTML)
 
     def test_timer_autofinish_resume_and_persistence(self):
-        for token in ["K_RECORDS='asan:records:v214'", "K_ACTIVE='asan:active:v214'", "K_PIN='asan:pin:v214'",'const N=100','DEFAULT_MINUTES=90','function remaining()','function complete(timedOut)','if(remaining()<=0){complete(true);return}','setInterval(tick,1000)','localStorage.removeItem(K_ACTIVE)']:
+        for token in ["K_RECORDS='asan:records:v214'", "K_ACTIVE='asan:active:v214'", "K_PIN='asan:pin:v214'",'const N=100','DEFAULT_MINUTES=20','function remaining()','function complete(timedOut)','if(remaining()<=0){complete(true);return}','setInterval(tick,1000)','localStorage.removeItem(K_ACTIVE)']:
             self.assertIn(token,HTML)
 
     def test_only_admin_shows_answer_key_in_ui(self):
