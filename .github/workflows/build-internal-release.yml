@@ -1,6 +1,12 @@
-name: Android internal Release APK (temporary test signature)
+name: Asan Android internal Release APK (temporary test signature)
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android-wrapper/**'
+      - '.github/workflows/build-internal-release.yml'
+      - 'tests/**'
   push:
     branches: [main]
     paths:
@@ -27,12 +33,22 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Locate Android SDK installed on GitHub runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$ANDROID_HOME/cmdline-tools"
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -x "$SDKMGR"
+          echo "$(dirname "$SDKMGR")" >> "$GITHUB_PATH"
+          "$SDKMGR" --version
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
       - name: Install Android compile SDK and build tools
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build signed internal testing Release
         shell: bash
         working-directory: android-wrapper
@@ -55,11 +71,14 @@ jobs:
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           sha256sum "$APK" > "$APK.sha256"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep "^package:"
+          echo "### Asan APK — internal release" >> "$GITHUB_STEP_SUMMARY"
+          echo "Built from commit $GITHUB_SHA; signing certificate is temporary." >> "$GITHUB_STEP_SUMMARY"
           rm -f "$KEYSTORE"
       - name: Upload internal testing APK (not production-signed)
         uses: actions/upload-artifact@v4
         with:
-          name: Miz-Mosahebe-2.1.2-INTERNAL-RELEASE-APK
+          name: Asan-2.1.2-INTERNAL-RELEASE-APK
           path: |
             android-wrapper/app/build/outputs/apk/release/app-release.apk
             android-wrapper/app/build/outputs/apk/release/app-release.apk.sha256
