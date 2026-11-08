@@ -69,11 +69,10 @@ public final class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         getWindow().getDecorView().setSystemUiVisibility(flags);
         if (getActionBar() != null) {
-            getActionBar().setTitle("آسان | سامانه استخدامی");
+            getActionBar().setTitle("آسان | استخدام حسابداری");
         }
-        String url = getPreferences(MODE_PRIVATE).getString(KEY_URL, "");
-        if (url.isEmpty() || !isValidUrl(url)) showDemo();
-        else openWeb(url);
+        // Candidate-first by design: company mode is accessed only through the admin screen.
+        showDemo();
     }
 
     private TextView label(String value, int size, boolean bold, int color) {
@@ -103,24 +102,25 @@ public final class MainActivity extends Activity {
         }
     }
 
-    /** Fully self-contained public demonstration: no private answers, server keys or candidate data. */
+    /** Local demonstration on this single device; not a secure remote recruitment service. */
     private void showDemo() {
         demoMode = true;
         serverOrigin = null;
         if (web != null) { web.destroy(); web = null; }
         if (getActionBar() != null) getActionBar().hide();
-        try (InputStream stream = getAssets().open("demo.html");
+        try (InputStream in = getAssets().open("demo.html");
              ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-            byte[] bytes = new byte[8192];
-            int size;
-            while ((size = stream.read(bytes)) != -1) buffer.write(bytes, 0, size);
+            byte[] chunk = new byte[8192];
+            int n;
+            while ((n = in.read(chunk)) != -1) buffer.write(chunk, 0, n);
             String document = buffer.toString("UTF-8");
             web = new WebView(this);
             web.setBackgroundColor(Color.WHITE);
             WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
             WebSettings settings = web.getSettings();
             settings.setJavaScriptEnabled(true);
-            settings.setDomStorageEnabled(false);
+            // Persist active timed exams and reviewed reports across app restarts.
+            settings.setDomStorageEnabled(true);
             settings.setAllowFileAccess(false);
             settings.setAllowContentAccess(false);
             settings.setAllowFileAccessFromFileURLs(false);
@@ -130,23 +130,35 @@ public final class MainActivity extends Activity {
             settings.setJavaScriptCanOpenWindowsAutomatically(false);
             CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
             web.setWebViewClient(new WebViewClient() {
-                @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                    Uri uri = request.getUrl();
-                    if ("asan".equalsIgnoreCase(uri.getScheme()) && "setup".equalsIgnoreCase(uri.getHost())) {
-                        showSetup();
+                @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
+                    Uri uri = req.getUrl();
+                    if ("asan".equalsIgnoreCase(uri.getScheme())) {
+                        if ("setup".equalsIgnoreCase(uri.getHost())) showSetup();
+                        else if ("print".equalsIgnoreCase(uri.getHost())) printCurrentPage();
                     }
-                    return true; // No external navigation from the self-contained demo.
+                    // No remote navigation, tracking or third-party resources from offline mode.
+                    return true;
                 }
-                @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
                     return new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream(new byte[0]));
                 }
             });
             setContentView(web);
             web.loadDataWithBaseURL("https://asan-demo.invalid/", document, "text/html", "UTF-8", null);
             invalidateOptionsMenu();
-        } catch (Exception ex) {
-            Toast.makeText(this, "بارگذاری حالت نمایشی ناموفق بود.", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "بارگذاری رابط آفلاین آسان ممکن نشد.", Toast.LENGTH_LONG).show();
             showSetup();
+        }
+    }
+
+    private void printCurrentPage() {
+        if (web == null) return;
+        try {
+            PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+            pm.print("گزارش مصاحبه آسان", web.createPrintDocumentAdapter("گزارش مصاحبه آسان"), null);
+        } catch (Exception ex) {
+            Toast.makeText(this, "چاپ گزارش در دسترس نیست.", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -160,22 +172,21 @@ public final class MainActivity extends Activity {
         content.setPadding(dp(22), dp(34), dp(22), dp(36));
         content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         content.setBackgroundColor(Color.WHITE);
-
-        Button backToDemo = new Button(this);
-        backToDemo.setAllCaps(false);
-        backToDemo.setText("← بازگشت به برنامه آسان");
-        backToDemo.setTextColor(DARK);
-        backToDemo.setBackground(background(MIST, 13, LINE));
-        backToDemo.setOnClickListener(v -> showDemo());
-        content.addView(backToDemo, new LinearLayout.LayoutParams(-1, dp(48)));
+        Button back = new Button(this);
+        back.setAllCaps(false);
+        back.setText("بازگشت به آسان ←");
+        back.setTextColor(DARK);
+        back.setBackground(background(MIST, 12, LINE));
+        back.setOnClickListener(v -> showDemo());
+        content.addView(back, new LinearLayout.LayoutParams(-1, dp(45)));
 
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.ic_launcher);
-        logo.setContentDescription("نشان آسان");
+        logo.setContentDescription("نشان میز مصاحبه");
         LinearLayout.LayoutParams logoP = new LinearLayout.LayoutParams(dp(80), dp(80));
         logoP.gravity = Gravity.RIGHT;
         content.addView(logo, logoP);
-        TextView name = label("آسان | مصاحبه حسابداری", 25, true, DARK);
+        TextView name = label("میز مصاحبه حسابداری", 25, true, DARK);
         LinearLayout.LayoutParams nP = new LinearLayout.LayoutParams(-1, -2);
         nP.topMargin = dp(14);
         content.addView(name, nP);
@@ -265,7 +276,6 @@ public final class MainActivity extends Activity {
         demoMode = false;
         if (getActionBar() != null) getActionBar().show();
         serverOrigin = Uri.parse(url);
-        if (web != null) { web.destroy(); web = null; }
         web = new WebView(this);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         web.setBackgroundColor(Color.WHITE);
@@ -303,16 +313,13 @@ public final class MainActivity extends Activity {
                         .setTitle("سرور در دسترس نیست")
                         .setMessage("نشانی سرور و اتصال شبکه شرکت را بررسی کنید.")
                         .setPositiveButton("تلاش مجدد", (dialog, which) -> { if (web != null) web.reload(); })
-                        .setNegativeButton("بازگشت به آسان", (dialog, which) -> {
-                            getPreferences(MODE_PRIVATE).edit().remove(KEY_URL).apply();
-                            showDemo();
-                        }).setNeutralButton("تغییر سرور", (dialog, which) -> showSetup()).show();
+                        .setNegativeButton("تغییر سرور", (dialog, which) -> showSetup()).show();
                 }
             }
         });
         web.setDownloadListener((link, userAgent, contentDisposition, mimeType, length) -> {
             Uri target = Uri.parse(link);
-            if (demoMode || !isCompanyUrl(target) || target.getPath() == null
+            if (!isCompanyUrl(target) || target.getPath() == null
                     || !target.getPath().startsWith("/api/admin/reports/")) {
                 Toast.makeText(this, "دریافت فایل از نشانی دیگر مجاز نیست.", Toast.LENGTH_LONG).show();
                 return;
