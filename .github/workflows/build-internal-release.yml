@@ -33,12 +33,22 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Locate Android SDK installed on GitHub runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$ANDROID_HOME/cmdline-tools"
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -x "$SDKMGR"
+          echo "$(dirname "$SDKMGR")" >> "$GITHUB_PATH"
+          "$SDKMGR" --version
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
       - name: Install Android compile SDK and build tools
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build signed internal testing Release
         shell: bash
         working-directory: android-wrapper
