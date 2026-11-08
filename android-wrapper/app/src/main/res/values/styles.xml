@@ -1,5 +1,5 @@
 <resources>
-    <style name="MizTheme" parent="android:style/Theme.Material.Light.DarkActionBar">
+    <style name="MizTheme" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:colorPrimary">#176A49</item>
         <item name="android:colorPrimaryDark">#50C787</item>
         <item name="android:colorAccent">#50C787</item>
