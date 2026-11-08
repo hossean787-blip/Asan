@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#50C787" />
+  <meta name="description" content="میز مصاحبه حسابداری؛ آزمون استخدامی ۱۰۰ سؤالی تطبیقی ویژه شرکت‌ها" />
+  <link rel="icon" type="image/svg+xml" href="/static/logo.svg" />
+  <link rel="manifest" href="/static/manifest.webmanifest" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/theme-green.css" />
+  <title>میز مصاحبه | ارزیابی استخدام حسابداری</title>
+</head>
+<body>
+  <div class="app-shell" id="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-block">
+        <div class="brand-symbol"><svg viewBox="0 0 52 52" width="44" height="44" aria-hidden="true"><rect width="52" height="52" rx="16" fill="#50C787"/><path d="M13 36V20l13-8 13 8v16H13Z" fill="none" stroke="#0D4B32" stroke-width="3" stroke-linejoin="round"/><path d="M19 27h14M19 33h14M26 21v14" stroke="#0D4B32" stroke-width="2.7" stroke-linecap="round"/></svg></div>
+        <div><div class="brand-name">میز مصاحبه</div><div class="brand-sub">ACCOUNTING ASSESSMENT</div></div>
+      </div>
+      <div class="sidebar-section">پنل مدیریت</div>
+      <nav class="nav-list" id="nav-list">
+        <button class="nav-item is-active" data-view="dashboard"><span class="nav-icon">▦</span> داشبورد <span class="nav-marker"></span></button>
+        <button class="nav-item" data-view="create"><span class="nav-icon">✚</span> آزمون جدید <span class="nav-marker"></span></button>
+        <button class="nav-item" data-view="reports"><span class="nav-icon">☷</span> گزارش‌ها <span class="nav-marker"></span></button>
+        <button class="nav-item" data-view="bank"><span class="nav-icon">▤</span> بانک سؤالات <span class="nav-marker"></span></button>
+      </nav>
+      <div class="side-bottom">
+        <div class="side-preview"><span class="status-pulse"></span><strong>نسخه آزمایشی ۲.۱.۲</strong><span>اطلاعات فقط در سرور شما</span></div>
+        <button id="logout-btn" class="logout-link" hidden>خروج از پنل مدیریت <span>←</span></button>
+      </div>
+    </aside>
+    <div class="workarea">
+      <header class="topbar">
+        <button id="mobile-menu" class="mobile-menu" aria-label="بازکردن منو">☰</button>
+        <div class="breadcrumb">سامانه ارزیابی / <strong id="breadcrumb-title">داشبورد</strong></div>
+        <div class="top-right"><span class="secure-pill"><span class="status-dot"></span> آزمون داخلی شرکت</span><span class="avatar">م</span></div>
+      </header>
+      <main class="main-content" id="main" tabindex="-1"><div class="loading-screen"><div class="loader"></div> در حال بارگذاری برنامه...</div></main>
+      <footer class="footer">میز مصاحبه حسابداری <span>•</span> نسخه آزمایشی برای ارزیابی اولیه <span>•</span> تصمیم استخدام نیازمند بررسی انسانی است</footer>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

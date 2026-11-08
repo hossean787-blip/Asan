@@ -1,0 +1,67 @@
+name: Android internal Release APK (temporary test signature)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'android-wrapper/**'
+      - '.github/workflows/build-internal-release.yml'
+      - 'tests/**'
+      - 'server.py'
+      - 'bank_source.py'
+      - 'bank_expansion_v21.py'
+permissions:
+  contents: read
+jobs:
+  internal-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Unit tests before packaging
+        run: python -m unittest discover -s tests -q
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android compile SDK and build tools
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Build signed internal testing Release
+        shell: bash
+        working-directory: android-wrapper
+        run: |
+          set -euo pipefail
+          # A DIFFERENT ephemeral certificate is used every run. This APK is
+          # installable for testing but cannot upgrade an APK from an earlier run.
+          KEYSTORE="$RUNNER_TEMP/miz-internal-$(date +%s).jks"
+          PASS="$(openssl rand -hex 24)"
+          keytool -genkeypair -noprompt -keystore "$KEYSTORE" \
+            -alias miz-internal -storepass "$PASS" -keypass "$PASS" \
+            -keyalg RSA -keysize 3072 -validity 3650 \
+            -dname 'CN=Miz Internal QA,OU=Testing,O=Independent App,C=IR'
+          export MIZ_KEYSTORE_PATH="$KEYSTORE"
+          export MIZ_STORE_PASSWORD="$PASS"
+          export MIZ_KEY_ALIAS=miz-internal
+          export MIZ_KEY_PASSWORD="$PASS"
+          gradle --no-daemon :app:assembleRelease
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          sha256sum "$APK" > "$APK.sha256"
+          rm -f "$KEYSTORE"
+      - name: Upload internal testing APK (not production-signed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Miz-Mosahebe-2.1.2-INTERNAL-RELEASE-APK
+          path: |
+            android-wrapper/app/build/outputs/apk/release/app-release.apk
+            android-wrapper/app/build/outputs/apk/release/app-release.apk.sha256
+          if-no-files-found: error
+          retention-days: 14

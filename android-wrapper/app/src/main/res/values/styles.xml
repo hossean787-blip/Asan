@@ -1,0 +1,10 @@
+<resources>
+    <style name="MizTheme" parent="android:style/Theme.Material.Light.DarkActionBar">
+        <item name="android:colorPrimary">#176A49</item>
+        <item name="android:colorPrimaryDark">#50C787</item>
+        <item name="android:colorAccent">#50C787</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+    </style>
+</resources>
