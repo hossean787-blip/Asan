@@ -32,6 +32,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.Locale;
 
 /** Android client only; tests, candidate records and answer keys stay on company server. */
@@ -45,6 +47,7 @@ public final class MainActivity extends Activity {
     private static final int LINE = Color.rgb(215, 233, 221);
     private WebView web;
     private Uri serverOrigin;
+    private boolean demoMode;
 
     private int dp(float v) {
         return Math.round(v * getResources().getDisplayMetrics().density);
@@ -66,10 +69,10 @@ public final class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         getWindow().getDecorView().setSystemUiVisibility(flags);
         if (getActionBar() != null) {
-            getActionBar().setTitle("میز مصاحبه حسابداری");
+            getActionBar().setTitle("آسان | سامانه استخدامی");
         }
         String url = getPreferences(MODE_PRIVATE).getString(KEY_URL, "");
-        if (url.isEmpty() || !isValidUrl(url)) showSetup();
+        if (url.isEmpty() || !isValidUrl(url)) showDemo();
         else openWeb(url);
     }
 
@@ -100,7 +103,56 @@ public final class MainActivity extends Activity {
         }
     }
 
+    /** Fully self-contained public demonstration: no private answers, server keys or candidate data. */
+    private void showDemo() {
+        demoMode = true;
+        serverOrigin = null;
+        if (web != null) { web.destroy(); web = null; }
+        if (getActionBar() != null) getActionBar().hide();
+        try (InputStream stream = getAssets().open("demo.html");
+             ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            byte[] bytes = new byte[8192];
+            int size;
+            while ((size = stream.read(bytes)) != -1) buffer.write(bytes, 0, size);
+            String document = buffer.toString("UTF-8");
+            web = new WebView(this);
+            web.setBackgroundColor(Color.WHITE);
+            WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+            WebSettings settings = web.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setDomStorageEnabled(false);
+            settings.setAllowFileAccess(false);
+            settings.setAllowContentAccess(false);
+            settings.setAllowFileAccessFromFileURLs(false);
+            settings.setAllowUniversalAccessFromFileURLs(false);
+            settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+            settings.setSupportMultipleWindows(false);
+            settings.setJavaScriptCanOpenWindowsAutomatically(false);
+            CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
+            web.setWebViewClient(new WebViewClient() {
+                @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    Uri uri = request.getUrl();
+                    if ("asan".equalsIgnoreCase(uri.getScheme()) && "setup".equalsIgnoreCase(uri.getHost())) {
+                        showSetup();
+                    }
+                    return true; // No external navigation from the self-contained demo.
+                }
+                @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                    return new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream(new byte[0]));
+                }
+            });
+            setContentView(web);
+            web.loadDataWithBaseURL("https://asan-demo.invalid/", document, "text/html", "UTF-8", null);
+            invalidateOptionsMenu();
+        } catch (Exception ex) {
+            Toast.makeText(this, "بارگذاری حالت نمایشی ناموفق بود.", Toast.LENGTH_LONG).show();
+            showSetup();
+        }
+    }
+
     private void showSetup() {
+        demoMode = false;
+        if (getActionBar() != null) getActionBar().hide();
         serverOrigin = null;
         if (web != null) { web.destroy(); web = null; }
         LinearLayout content = new LinearLayout(this);
@@ -109,13 +161,21 @@ public final class MainActivity extends Activity {
         content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         content.setBackgroundColor(Color.WHITE);
 
+        Button backToDemo = new Button(this);
+        backToDemo.setAllCaps(false);
+        backToDemo.setText("← بازگشت به برنامه آسان");
+        backToDemo.setTextColor(DARK);
+        backToDemo.setBackground(background(MIST, 13, LINE));
+        backToDemo.setOnClickListener(v -> showDemo());
+        content.addView(backToDemo, new LinearLayout.LayoutParams(-1, dp(48)));
+
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.ic_launcher);
-        logo.setContentDescription("نشان میز مصاحبه");
+        logo.setContentDescription("نشان آسان");
         LinearLayout.LayoutParams logoP = new LinearLayout.LayoutParams(dp(80), dp(80));
         logoP.gravity = Gravity.RIGHT;
         content.addView(logo, logoP);
-        TextView name = label("میز مصاحبه حسابداری", 25, true, DARK);
+        TextView name = label("آسان | مصاحبه حسابداری", 25, true, DARK);
         LinearLayout.LayoutParams nP = new LinearLayout.LayoutParams(-1, -2);
         nP.topMargin = dp(14);
         content.addView(name, nP);
@@ -202,7 +262,10 @@ public final class MainActivity extends Activity {
     }
 
     private void openWeb(String url) {
+        demoMode = false;
+        if (getActionBar() != null) getActionBar().show();
         serverOrigin = Uri.parse(url);
+        if (web != null) { web.destroy(); web = null; }
         web = new WebView(this);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         web.setBackgroundColor(Color.WHITE);
@@ -240,13 +303,16 @@ public final class MainActivity extends Activity {
                         .setTitle("سرور در دسترس نیست")
                         .setMessage("نشانی سرور و اتصال شبکه شرکت را بررسی کنید.")
                         .setPositiveButton("تلاش مجدد", (dialog, which) -> { if (web != null) web.reload(); })
-                        .setNegativeButton("تغییر سرور", (dialog, which) -> showSetup()).show();
+                        .setNegativeButton("بازگشت به آسان", (dialog, which) -> {
+                            getPreferences(MODE_PRIVATE).edit().remove(KEY_URL).apply();
+                            showDemo();
+                        }).setNeutralButton("تغییر سرور", (dialog, which) -> showSetup()).show();
                 }
             }
         });
         web.setDownloadListener((link, userAgent, contentDisposition, mimeType, length) -> {
             Uri target = Uri.parse(link);
-            if (!isCompanyUrl(target) || target.getPath() == null
+            if (demoMode || !isCompanyUrl(target) || target.getPath() == null
                     || !target.getPath().startsWith("/api/admin/reports/")) {
                 Toast.makeText(this, "دریافت فایل از نشانی دیگر مجاز نیست.", Toast.LENGTH_LONG).show();
                 return;
@@ -300,7 +366,8 @@ public final class MainActivity extends Activity {
     }
 
     @Override public void onBackPressed() {
-        if (web != null && web.canGoBack()) web.goBack();
+        if (web != null && !demoMode && web.canGoBack()) web.goBack();
+        else if (web != null && !demoMode) showDemo();
         else super.onBackPressed();
     }
 
