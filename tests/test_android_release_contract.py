@@ -11,8 +11,8 @@ JAVA = ANDROID / 'app/src/main/java/ir/mizmosahabe/accounting/MainActivity.java'
 class AndroidContractTests(unittest.TestCase):
     def test_package_version_and_platform(self):
         gradle = (ANDROID / 'app/build.gradle').read_text()
-        for check in ["applicationId 'ir.mizmosahabe.accounting'", 'versionCode 10',
-                      "versionName '2.1.7-beta'", 'minSdk 24', 'compileSdk 35', 'targetSdk 35']:
+        for check in ["applicationId 'ir.mizmosahabe.accounting'", 'versionCode 11',
+                      "versionName '2.1.8-beta'", 'minSdk 24', 'compileSdk 35', 'targetSdk 35']:
             self.assertIn(check, gradle)
 
     def test_manifest_security_and_debug_separation(self):
