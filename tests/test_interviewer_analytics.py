@@ -19,8 +19,8 @@ class InterviewerAnalyticsTests(unittest.TestCase):
         self.assertIn('class="brand-icon"', self.html)
         self.assertIn('class="welcome-brand"', self.html)
         self.assertIn("#50C787", self.icon)
-        self.assertIn("versionCode 10", self.gradle)
-        self.assertIn("versionName '2.1.7-beta'", self.gradle)
+        self.assertIn("versionCode 11", self.gradle)
+        self.assertIn("versionName '2.1.8-beta'", self.gradle)
 
     def test_interviewer_stats_locked_to_admin(self):
         self.assertIn("function statsPage(all)", self.html)
