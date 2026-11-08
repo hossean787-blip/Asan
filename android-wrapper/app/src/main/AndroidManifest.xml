@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
-    <application android:label="آسان" android:allowBackup="false"
+    <application android:label="آسان | آزمون حسابداری" android:allowBackup="false"
       android:supportsRtl="true" android:usesCleartextTraffic="false"
       android:icon="@drawable/ic_launcher" android:theme="@style/MizTheme">
         <activity android:name=".MainActivity" android:exported="true"
