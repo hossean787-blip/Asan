@@ -71,8 +71,9 @@ public final class MainActivity extends Activity {
         if (getActionBar() != null) {
             getActionBar().setTitle("آسان | استخدام حسابداری");
         }
-        // Candidate-first by design: company mode is accessed only through the admin screen.
-        showDemo();
+        // Prefer the shared company server so multiple devices report to one database.
+        // Offline demo remains available from the setup screen.
+        showSetup();
     }
 
     private TextView label(String value, int size, boolean bold, int color) {
