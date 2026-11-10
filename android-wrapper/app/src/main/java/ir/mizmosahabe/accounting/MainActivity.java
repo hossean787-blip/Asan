@@ -39,6 +39,7 @@ import java.util.Locale;
 /** Android client only; tests, candidate records and answer keys stay on company server. */
 public final class MainActivity extends Activity {
     private static final String KEY_URL = "server_url";
+    private static final String DEFAULT_SERVER_URL = "https://br-withered-violet-b9v97r4n-asanpanel.compute.c-7.eu-central-1.aws.neon.tech";
     private static final int GREEN = Color.rgb(80, 199, 135);  // #50C787
     private static final int DARK = Color.rgb(13, 75, 50);
     private static final int INK = Color.rgb(24, 50, 40);
@@ -73,7 +74,9 @@ public final class MainActivity extends Activity {
         }
         // Prefer the shared company server so multiple devices report to one database.
         // Offline demo remains available from the setup screen.
-        showSetup();
+        String preferredUrl = getPreferences(MODE_PRIVATE).getString(KEY_URL, DEFAULT_SERVER_URL);
+        if (isValidUrl(preferredUrl)) openWeb(preferredUrl);
+        else showSetup();
     }
 
     private TextView label(String value, int size, boolean bold, int color) {
